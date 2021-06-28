@@ -101,6 +101,7 @@ function toolchain(_buildDir, _subDir)
 	elseif _OPTIONS["PLATFORM"]:find("64", -2) then
 		androidPlatform = "android-24"
 	end
+	androidPlatformNumber = androidPlatform:sub(9)
 
 	local iosPlatform = ""
 	if _OPTIONS["with-ios"] then
@@ -865,11 +866,12 @@ function toolchain(_buildDir, _subDir)
 		objdir (_buildDir .. "android/obj/" .. _OPTIONS["PLATFORM"])
 		includedirs {
 			MAME_DIR .. "3rdparty/bgfx/3rdparty/khronos",
-			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libcxx/include",
-			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include",
-			"$(ANDROID_NDK_ROOT)/sysroot/usr/include",
-			"$(ANDROID_NDK_ROOT)/sources/android/support/include",
-			"$(ANDROID_NDK_ROOT)/sources/android/native_app_glue",
+			--  LIBRETRO: don't mess with NDK includir order
+			-- "$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libcxx/include",
+			-- "$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/include",
+			-- "$(ANDROID_NDK_ROOT)/sysroot/usr/include",
+			-- "$(ANDROID_NDK_ROOT)/sources/android/support/include",
+			-- "$(ANDROID_NDK_ROOT)/sources/android/native_app_glue",
 		}
 		linkoptions {
 			"-nostdlib",
@@ -886,7 +888,6 @@ function toolchain(_buildDir, _subDir)
 			"c++_static",
 			"c++abi",
 			"stdc++",
-			"gcc",
 		}
 		buildoptions_c {
 			"-Wno-strict-prototypes",
@@ -897,7 +898,6 @@ function toolchain(_buildDir, _subDir)
 			"-funwind-tables",
 			"-fstack-protector-strong",
 			"-no-canonical-prefixes",
-			"-fno-integrated-as",
 			"-Wunused-value",
 			"-Wundef",
 			"-Wno-cast-align",
@@ -914,32 +914,32 @@ function toolchain(_buildDir, _subDir)
 			"-Wl,-z,now",
 		}
 
-
 	configuration { "android-arm" }
 			libdirs {
 				"$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/armeabi-v7a",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm/usr/lib",
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/arm-linux-androideabi/" .. androidPlatformNumber,
 			}
 			includedirs {
-				"$(ANDROID_NDK_ROOT)/sysroot/usr/include/arm-linux-androideabi",
 			}
 			buildoptions {
 				"-gcc-toolchain $(ANDROID_NDK_ARM)",
-				"-target armv7-none-linux-androideabi",
+				"-target armv7-linux-androideabi" .. androidPlatformNumber,
 				"-march=armv7-a",
 				"-mfloat-abi=softfp",
 				"-mfpu=vfpv3-d16",
 				"-mthumb",
 			}
 			links {
+				"android_support",
 				"unwind",
+				"gcc",
 			}
 			linkoptions {
 				"-gcc-toolchain $(ANDROID_NDK_ARM)",
-				"--sysroot=$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm/usr/lib/crtbegin_so.o",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm/usr/lib/crtend_so.o",
-				"-target armv7-none-linux-androideabi",
+				"--sysroot=$(ANDROID_NDK_LLVM)/sysroot/usr/lib/arm-linux-androideabi/" .. androidPlatformNumber,
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/arm-linux-androideabi/" .. androidPlatformNumber .. "/crtbegin_so.o",
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/arm-linux-androideabi/" .. androidPlatformNumber .. "/crtend_so.o",
+				"-target armv7-linux-androideabi" .. androidPlatformNumber,
 				"-march=armv7-a",
 				"-mthumb",
 			}
@@ -947,21 +947,25 @@ function toolchain(_buildDir, _subDir)
 	configuration { "android-arm64" }
 			libdirs {
 				"$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/arm64-v8a",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm64/usr/lib64",
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/aarch64-linux-android/" .. androidPlatformNumber,
 			}
 			includedirs {
-				"$(ANDROID_NDK_ROOT)/sysroot/usr/include/aarch64-linux-android",
 			}
 			buildoptions {
 				"-gcc-toolchain $(ANDROID_NDK_ARM64)",
-				"-target aarch64-none-linux-android",
+				"-target aarch64-linux-android" .. androidPlatformNumber,
+				"-march=armv8-a",
+			}
+			links {
+				"gcc",
 			}
 			linkoptions {
 				"-gcc-toolchain $(ANDROID_NDK_ARM64)",
-				"--sysroot=$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm64",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm64/usr/lib/crtbegin_so.o",
-				"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-arm64/usr/lib/crtend_so.o",
-				"-target aarch64-none-linux-android",
+				"--sysroot=$(ANDROID_NDK_LLVM)/sysroot/usr/lib/aarch64-linux-android/" .. androidPlatformNumber,
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/aarch64-linux-android/" .. androidPlatformNumber .. "/crtbegin_so.o",
+				"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/aarch64-linux-android/" .. androidPlatformNumber .. "/crtend_so.o",
+				"-target aarch64-linux-android" .. androidPlatformNumber,
+				"-march=armv8-a",
 			}
 
 	configuration { "android-x86" }
@@ -989,21 +993,24 @@ function toolchain(_buildDir, _subDir)
 	configuration { "android-x64" }
 		libdirs {
 			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/llvm-libc++/libs/x86_64",
-			"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-x86_64/usr/lib64",
+			"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/x86_64-linux-android/" .. androidPlatformNumber,
 		}
 		includedirs {
-			"$(ANDROID_NDK_ROOT)/sysroot/usr/include/x86_64-linux-android",
 		}
 		buildoptions {
 			"-gcc-toolchain $(ANDROID_NDK_X64)",
-			"-target x86_64-none-linux-android",
+			"-target x86_64-linux-android" .. androidPlatformNumber,
+		}
+		links {
+			"gcc",
 		}
 		linkoptions {
 			"-gcc-toolchain $(ANDROID_NDK_X64)",
-			"-target x86_64-none-linux-android",
-			"--sysroot=$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-x86_64",
-			"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-x86_64/usr/lib64/crtbegin_so.o",
-			"$(ANDROID_NDK_ROOT)/platforms/" .. androidPlatform .. "/arch-x86_64/usr/lib64/crtend_so.o",
+			"-target x86_64-linux-android" .. androidPlatformNumber,
+			"--sysroot=$(ANDROID_NDK_LLVM)/sysroot/usr/lib/x86_64-linux-android/" .. androidPlatformNumber,
+			"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/x86_64-linux-android/" .. androidPlatformNumber .. "/crtbegin_so.o",
+			"$(ANDROID_NDK_LLVM)/sysroot/usr/lib/x86_64-linux-android/" .. androidPlatformNumber .. "/crtend_so.o",
+			"-target x86_64-linux-android" .. androidPlatformNumber,
 		}
 
 	configuration { "asmjs" }
@@ -1097,6 +1104,85 @@ function toolchain(_buildDir, _subDir)
 	configuration { "rpi" }
 		targetdir (_buildDir .. "rpi" .. "/bin")
 		objdir (_buildDir .. "rpi" .. "/obj")
+-- BEGIN libretro overrides to MAME's GENie build
+
+	configuration { "libretro*" }
+		objdir (_buildDir .. "libretro" .. "/obj")
+
+	-- $ARCH means something to Apple/Clang, so we can't use it here.
+		-- Instead, use ARCH="" LIBRETRO_CPU="$ARCH" on the make cmdline.
+		--
+		-- NB: $ARCH has caused libretro problems before, LIBRETRO_CPU will
+		--     replace it everywhere at some point.
+		newoption {
+			trigger = "LIBRETRO_CPU",
+			description = "libretro CPU/architecture variable",
+		}
+		if _OPTIONS["LIBRETRO_CPU"]~=nil then
+			LIBRETRO_CPU=_OPTIONS["LIBRETRO_CPU"]
+		end
+
+		-- $platform we could keep using, but $LIBRETRO_OS seems safer.
+		newoption {
+			trigger = "LIBRETRO_OS",
+			description = "libretro OS/platform variable",
+		}
+		if _OPTIONS["LIBRETRO_OS"]~=nil then
+			LIBRETRO_OS=_OPTIONS["LIBRETRO_OS"]
+		end
+
+		-- Set TARGETOS based on LIBRETRO_OS if we know
+		if LIBRETRO_OS~=nil then
+			-- most things are "linux" (ish).
+			local targetos = "linux"
+			if LIBRETRO_OS=="osx" then
+				targetos = "macosx"
+			elseif LIBRETRO_OS:sub(1, 4)=="armv" then
+				targetos = "android"
+                        elseif LIBRETRO_OS=="ios" then
+				targetos = "ios"
+                        elseif LIBRETRO_OS=="win32" then
+				targetos = "win32"
+			end
+			_OPTIONS["TARGETOS"] = targetos
+		end
+
+		-- FIXME: set BIGENDIAN and dynarec based on retro_platform/retro_arch
+		if LIBRETRO_CPU~=nil then
+			if LIBRETRO_CPU=="x86_64" or LIBRETRO_CPU=="ppc64" then
+				defines { "PTR64=1" }
+			end
+		end
+
+
+		-- MS and Apple don't need -fPIC, but pretty much everything else does.
+		if _OPTIONS["targetos"] ~= "windows" and _OPTIONS["targetos"] ~= "macosx" then
+			buildoptions { "-fPIC" }
+			linkoptions { "-fPIC" }
+		end
+
+		-- Don't use BGFX (Defaults to 1 for Windows if unset)
+		 USE_BGFX = 0
+-- _OPTIONS["USE_BGFX"] = "1"
+		-- libretro only supports the retro OSD
+		_OPTIONS["osd"] = "retro"
+
+		-- libretro does not (yet) support MIDI.
+		_OPTIONS["NO_USE_MIDI"] = "1"
+
+	configuration { "libretrodbg" }
+		targetdir (_buildDir .. "libretro"  .. "/debug")
+		flags {
+			"Symbols",
+		}
+	configuration { "libretro" }
+		targetdir (_buildDir .. "libretro" .. "/bin")
+		flags {
+			"Optimize",
+		}
+
+
+-- END   libretro overrides to MAME's GENie build
 
 	configuration {} -- reset configuration
 

@@ -1,19 +1,18 @@
+# **Libretro notice** #
+
+Before sending bug reports to the upstream bug tracker, make sure the bugs are reproducible in the latest standalone release.
+
+To build libretro MAME core from source you need to use `Makefile.libretro` make file:
+
+```
+make -f Makefile.libretro
+```
+
+--------
 
 # **MAME** #
 
 [![Join the chat at https://gitter.im/mamedev/mame](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mamedev/mame?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-Build status:
-
-| OS/Compiler   | Status        | 
-| ------------- |:-------------:| 
-| Linux/GCC and Clang | ![CI (Linux)](https://github.com/mamedev/mame/workflows/CI%20(Linux)/badge.svg) [![Build Status](https://travis-ci.org/mamedev/mame.svg?branch=master)](https://travis-ci.org/mamedev/mame) |
-| Windows/GCC and MSVC | ![CI (Windows)](https://github.com/mamedev/mame/workflows/CI%20(Windows)/badge.svg) |
-| macOS/Clang | ![CI (macOS)](https://github.com/mamedev/mame/workflows/CI%20(macOS)/badge.svg) |
-
-Static analysis status for entire build (except for third-party parts of project):
-
-[![Coverity Scan Status](https://scan.coverity.com/projects/5727/badge.svg?flat=1)](https://scan.coverity.com/projects/mame-emulator)
 
 What is MAME?
 =============

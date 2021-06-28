@@ -359,9 +359,9 @@ WINDRES  := $(MINGW32)/bin/windres
 endif
 else
 ifeq ($(ARCHITECTURE),_x64)
-WINDRES  := $(word 1,$(TOOLCHAIN) x86_64-w64-mingw32-)windres
+WINDRES  ?= $(word 1,$(TOOLCHAIN) x86_64-w64-mingw32-)windres
 else
-WINDRES  := $(word 1,$(TOOLCHAIN) i686-w64-mingw32-)windres
+WINDRES  ?= $(word 1,$(TOOLCHAIN) i686-w64-mingw32-)windres
 endif
 endif
 
@@ -1106,6 +1106,15 @@ PROJECTDIR := $(BUILDDIR)/projects/$(OSD)/$(FULLTARGET)
 PROJECTDIR_SDL := $(BUILDDIR)/projects/sdl/$(FULLTARGET)
 PROJECTDIR_WIN := $(BUILDDIR)/projects/windows/$(FULLTARGET)
 
+APPLE_EXTRA_FLAGS=
+ifeq (ios-arm64,$(LIBRETRO_OS))
+APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --NO_OPENGL=1 --USE_QTDEBUG=0 --LIBRETRO_IOS=1
+endif
+
+ifeq (tvos-arm64,$(LIBRETRO_OS))
+APPLE_EXTRA_FLAGS += --NOASM=1 --DONT_USE_NETWORK=1  --NO_USE_MIDI=1 --NO_OPENGL=1 --USE_QTDEBUG=0 --LIBRETRO_TVOS=1
+endif
+
 .PHONY: all clean regenie generate FORCE
 all: $(GENIE) $(TARGETOS)$(ARCHITECTURE)
 regenie:
@@ -1313,6 +1322,19 @@ endif
 # android-arm
 #-------------------------------------------------
 
+ifdef RETRO
+##RETRO HACK no sdl for libretro android
+$(PROJECTDIR)/$(MAKETYPE)-android-arm/Makefile: makefile $(SCRIPTS) $(GENIE)
+ifndef ANDROID_NDK_ARM
+	$(error ANDROID_NDK_ARM is not set)
+endif
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm --NO_USE_MIDI=1 --NO_OPENGL=1 --USE_QTDEBUG=0 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+
+.PHONY: android-arm
+android-arm: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-arm/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-arm config=$(CONFIG) precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-arm config=$(CONFIG)
+else
 $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_ARM
 	$(error ANDROID_NDK_ARM is not set)
@@ -1323,11 +1345,24 @@ endif
 android-arm: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm/Makefile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm config=$(CONFIG) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm config=$(CONFIG)
+endif # ifdef RETRO
 
 #-------------------------------------------------
 # android-arm64
 #-------------------------------------------------
 
+ifdef RETRO
+$(PROJECTDIR)/$(MAKETYPE)-android-arm64/Makefile: makefile $(SCRIPTS) $(GENIE)
+ifndef ANDROID_NDK_ARM64
+	$(error ANDROID_NDK_ARM64 is not set)
+endif
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-arm64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=arm64 --NO_USE_MIDI=1 --NO_OPENGL=1 --USE_QTDEBUG=0 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+
+.PHONY: android-arm64
+android-arm64: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-arm64/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-arm64 config=$(CONFIG) precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-arm64 config=$(CONFIG)
+else
 $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_ARM64
 	$(error ANDROID_NDK_ARM64 is not set)
@@ -1338,6 +1373,7 @@ endif
 android-arm64: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64/Makefile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64 config=$(CONFIG) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-arm64 config=$(CONFIG)
+endif # ifdef RETRO
 
 #-------------------------------------------------
 # android-x86
@@ -1358,6 +1394,18 @@ android-x86: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x86/Make
 # android-x64
 #-------------------------------------------------
 
+ifdef RETRO
+$(PROJECTDIR)/$(MAKETYPE)-android-x64/Makefile: makefile $(SCRIPTS) $(GENIE)
+ifndef ANDROID_NDK_X64
+	$(error ANDROID_NDK_X64 is not set)
+endif
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=android-x64 --gcc_version=$(CLANG_VERSION) --targetos=android --PLATFORM=x64 --NO_USE_MIDI=1 --NO_OPENGL=1 --USE_QTDEBUG=0 --DONT_USE_NETWORK=1 --NOASM=1 $(MAKETYPE)
+
+.PHONY: android-x64
+android-x64: android-ndk generate $(PROJECTDIR)/$(MAKETYPE)-android-x64/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-x64 config=$(CONFIG) precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-android-x64 config=$(CONFIG)
+else
 $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64/Makefile: makefile $(SCRIPTS) $(GENIE)
 ifndef ANDROID_NDK_X64
 	$(error ANDROID_NDK_X64 is not set)
@@ -1368,7 +1416,7 @@ endif
 android-x64: android-ndk generate $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64/Makefile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64 config=$(CONFIG) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR_SDL)/$(MAKETYPE)-android-x64 config=$(CONFIG)
-
+endif # ifdef RETRO
 #-------------------------------------------------
 # asmjs / Emscripten
 #-------------------------------------------------
@@ -1448,10 +1496,13 @@ macosx_x86: generate $(PROJECTDIR)/$(MAKETYPE)-osx/Makefile
 
 #-------------------------------------------------
 # gmake-osx-clang
+# (also used for ios-arm64)
+# For Libretro, building for iOS will override CC,
+# CXX - so just use the osx-clang target
 #-------------------------------------------------
 
 $(PROJECTDIR)/$(MAKETYPE)-osx-clang/Makefile: makefile $(SCRIPTS) $(GENIE)
-	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=osx-clang --gcc_version=$(CLANG_VERSION) $(MAKETYPE)
+	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=osx-clang --gcc_version=$(CLANG_VERSION) $(APPLE_EXTRA_FLAGS) $(MAKETYPE)
 
 .PHONY: macosx_x64_clang
 macosx_x64_clang: generate $(PROJECTDIR)/$(MAKETYPE)-osx-clang/Makefile

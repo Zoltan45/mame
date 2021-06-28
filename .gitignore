@@ -37,6 +37,7 @@
 !/.gitignore
 !/.travis.yml
 !/makefile
+!/Makefile.libretro
 !/mame.doxygen
 !/*.md
 !/*.bdf

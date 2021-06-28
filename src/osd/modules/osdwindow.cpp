@@ -10,6 +10,7 @@
 #include "osdwindow.h"
 
 #include "render/drawnone.h"
+#ifndef __LIBRETRO__
 #include "render/drawbgfx.h"
 #if (USE_OPENGL)
 #include "render/drawogl.h"
@@ -20,6 +21,9 @@
 #elif defined(OSD_SDL)
 #include "render/draw13.h"
 #include "render/drawsdl.h"
+#endif
+#else
+#include "render/drawretro.h"
 #endif
 
 osd_window::osd_window(running_machine &machine, int index, std::shared_ptr<osd_monitor_info> monitor, const osd_window_config &config) :
@@ -61,6 +65,10 @@ std::unique_ptr<osd_renderer> osd_renderer::make_for_type(int mode, std::shared_
 {
 	switch(mode)
 	{
+#ifdef __LIBRETRO__
+		case VIDEO_MODE_SOFT:
+			return std::make_unique<renderer_retro>(window);
+#else
 #if defined(OSD_WINDOWS) || defined(OSD_UWP)
 		case VIDEO_MODE_NONE:
 			return std::make_unique<renderer_none>(window);
@@ -82,6 +90,7 @@ std::unique_ptr<osd_renderer> osd_renderer::make_for_type(int mode, std::shared_
 		case VIDEO_MODE_SOFT:
 			return std::make_unique<renderer_sdl1>(window, extra_flags);
 #endif
+#endif //LIBRETRO
 		default:
 			return nullptr;
 	}
